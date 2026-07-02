@@ -161,6 +161,16 @@ def ler_custos(numero_di):
     return linha.iloc[0].to_dict()
 
 def aplicar_rateio(df_itens, custos):
+
+    if ler_custos is None:
+        custos = {}
+    elif not isinstance(custos, dict):
+        # Se for qualquer outra coisa (tipo uma Serie ou objeto Streamlit), converte para dict
+        try:
+            custos = dict(custos)
+        except:
+            custos = {}
+
     peso_total = df_itens["peso"].sum()
     if peso_total <= 0:
         raise Exception("Peso total do XML está zerado.")
