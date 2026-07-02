@@ -77,108 +77,75 @@ def salvar_base_pecas(caminho_excel, df_base):
 # =========================
 # LER XML DA DI
 # =========================
-def ler_di(caminho_xml, df_base, dicionario_pecas): 
-    tree = etree.parse(str(caminho_xml))
-    root = tree.getroot()
-
-    itens = []
-    
-    # Busca a Taxa Siscomex global no XML (tenta as nomenclaturas mais comuns do padrão Siscomex)
-    str_siscomex = texto(root, ".//taxaSiscomex") or texto(root, ".//taxaSiscomexDevida") or texto(root, ".//valorTaxaSiscomex")
-    taxa_siscomex_total = numero_xml_casas_decimais(str_siscomex, 2)
-
-    for adicao in root.findall(".//adicao"):
-        numero_di = texto(adicao, "numeroDI")
-        adicao_num = texto(adicao, "numeroAdicao")
-        ncm = texto(adicao, "dadosMercadoriaCodigoNcm")
-
-        peso_adicao = numero_xml_casas_decimais(texto(adicao, "dadosMercadoriaPesoLiquido"), 5)
-        cif_adicao = numero_xml_casas_decimais(texto(adicao, "iiBaseCalculo"), 2)
-        frete_internacional = numero_xml_casas_decimais(texto(adicao, "valorReaisFreteInternacional"), 2)
-
-        # Impostos zerados conforme solicitado
-        ii = 0.0
-        ipi = 0.0
-        pis = 0.0
-        cofins = 0.0
-
-        mercadorias = adicao.findall("mercadoria")
-        lista_mercadorias_temp = []
-        valor_total_mercadorias = 0.0
-
-        for i, mercadoria in enumerate(mercadorias, start=1):
-            qtd_str = texto(mercadoria, "quantidade")
-            v_un_str = texto(mercadoria, "valorUnitario")
+def ler_di(caminho_xml, df_base, dicionario_pecas):
+    try:
+        # 1. Leitura do XML (Flexível para arquivo ou upload)
+        if hasattr(caminho_xml, 'read'):
+            caminho_xml.seek(0)
+            tree = etree.parse(caminho_xml)
+        else:
+            tree = etree.parse(str(caminho_xml))
             
-            qtd_corrigida = numero_xml_casas_decimais(qtd_str, 5)
-            v_un_corrigido = numero_xml_casas_decimais(v_un_str, 7)
+        root = tree.getroot()
+        
+        # 2. Processamento dos Itens (Agora indentado dentro da função)
+        itens = []
+        str_siscomex = texto(root, ".//taxaSiscomex") or texto(root, ".//taxaSiscomexDevida") or texto(root, ".//valorTaxaSiscomex")
+        taxa_siscomex_total = numero_xml_casas_decimais(str_siscomex, 2)
 
-            valor_item = qtd_corrigida * v_un_corrigido
-            valor_total_mercadorias += valor_item
+        for adicao in root.findall(".//adicao"):
+            numero_di = texto(adicao, "numeroDI")
+            adicao_num = texto(adicao, "numeroAdicao")
+            ncm = texto(adicao, "dadosMercadoriaCodigoNcm")
+            peso_adicao = numero_xml_casas_decimais(texto(adicao, "dadosMercadoriaPesoLiquido"), 5)
+            cif_adicao = numero_xml_casas_decimais(texto(adicao, "iiBaseCalculo"), 2)
+            frete_internacional = numero_xml_casas_decimais(texto(adicao, "valorReaisFreteInternacional"), 2)
 
-            lista_mercadorias_temp.append({
-                "sequencia": i,
-                "xml_node": mercadoria,
-                "qtd_corrigida": qtd_corrigida,
-                "v_un_corrigido": v_un_corrigido,
-                "valor_item": valor_item
-            })
+            mercadorias = adicao.findall("mercadoria")
+            lista_mercadorias_temp = []
+            valor_total_mercadorias = 0.0
 
-        for item in lista_mercadorias_temp:
-            merc = item["xml_node"]
-            
-            if valor_total_mercadorias > 0:
-                fator_rateio = item["valor_item"] / valor_total_mercadorias
-            else:
-                fator_rateio = 1.0 / max(len(lista_mercadorias_temp), 1)
+            for i, mercadoria in enumerate(mercadorias, start=1):
+                qtd_corrigida = numero_xml_casas_decimais(texto(mercadoria, "quantidade"), 5)
+                v_un_corrigido = numero_xml_casas_decimais(texto(mercadoria, "valorUnitario"), 7)
+                valor_item = qtd_corrigida * v_un_corrigido
+                valor_total_mercadorias += valor_item
+                lista_mercadorias_temp.append({
+                    "sequencia": i, "xml_node": mercadoria, 
+                    "qtd_corrigida": qtd_corrigida, "v_un_corrigido": v_un_corrigido, "valor_item": valor_item
+                })
 
-            descricao_xml = texto(merc, "descricaoMercadoria").replace("\n", " ").replace("\r", " ").strip()
-            ncm_xml = ncm.strip()
-            chave_busca = (descricao_xml.upper(), ncm_xml)
+            for item in lista_mercadorias_temp:
+                merc = item["xml_node"]
+                fator_rateio = item["valor_item"] / valor_total_mercadorias if valor_total_mercadorias > 0 else 1.0 / max(len(lista_mercadorias_temp), 1)
+                
+                descricao_xml = texto(merc, "descricaoMercadoria").replace("\n", " ").replace("\r", " ").strip()
+                ncm_xml = ncm.strip()
+                chave_busca = (descricao_xml.upper(), ncm_xml)
 
-            if chave_busca in dicionario_pecas:
-                codigo_produto = dicionario_pecas[chave_busca]
-            else:
-                if df_base.empty:
-                    codigo_produto = 25001
+                if chave_busca in dicionario_pecas:
+                    codigo_produto = dicionario_pecas[chave_busca]
                 else:
-                    codigo_produto = df_base['CODIGO'].max() + 1
-                
-                dicionario_pecas[chave_busca] = codigo_produto
-                
-                nova_linha = pd.DataFrame([{
-                    'CODIGO': codigo_produto, 
-                    'DESCRICAO': descricao_xml.upper(), 
-                    'NCM': ncm_xml
-                }])
-                df_base = pd.concat([df_base, nova_linha], ignore_index=True)
+                    codigo_produto = df_base['CODIGO'].max() + 1 if not df_base.empty else 25001
+                    dicionario_pecas[chave_busca] = codigo_produto
+                    nova_linha = pd.DataFrame([{'CODIGO': codigo_produto, 'DESCRICAO': descricao_xml.upper(), 'NCM': ncm_xml}])
+                    df_base = pd.concat([df_base, nova_linha], ignore_index=True)
 
-            itens.append({
-                "numero_di": numero_di,
-                "adicao": adicao_num,
-                "item_sequencia": item["sequencia"],  
-                "codigo_produto": codigo_produto,
-                "ncm": ncm_xml,
-                "descricao": descricao_xml,
-                
-                "quantidade": item["qtd_corrigida"],
-                "unidade": texto(merc, "unidadeMedida").strip() or "UN",
-                "valor_unitario": item["v_un_corrigido"],
+                itens.append({
+                    "numero_di": numero_di, "adicao": adicao_num, "item_sequencia": item["sequencia"],
+                    "codigo_produto": codigo_produto, "ncm": ncm_xml, "descricao": descricao_xml,
+                    "quantidade": item["qtd_corrigida"], "unidade": texto(merc, "unidadeMedida").strip() or "UN",
+                    "valor_unitario": item["v_un_corrigido"], "peso": peso_adicao * fator_rateio,
+                    "cif": cif_adicao * fator_rateio, "frete_internacional": frete_internacional * fator_rateio,
+                    "taxa_siscomex": taxa_siscomex_total * (cif_adicao * fator_rateio / cif_adicao) if cif_adicao > 0 else (taxa_siscomex_total / len(mercadorias)),
+                    "ii": 0.0, "ipi": 0.0, "pis": 0.0, "cofins": 0.0
+                })
 
-                "peso": peso_adicao * fator_rateio,
-                "cif": cif_adicao * fator_rateio,
-                "frete_internacional": frete_internacional * fator_rateio,
-                
-                # Rateio da taxa siscomex global para este item
-                "taxa_siscomex": taxa_siscomex_total * (cif_adicao * fator_rateio / cif_adicao) if cif_adicao > 0 else (taxa_siscomex_total / len(mercadorias)),
+        return pd.DataFrame(itens), df_base, dicionario_pecas
 
-                "ii": ii,
-                "ipi": ipi,
-                "pis": pis,
-                "cofins": cofins,
-            })
-
-    return pd.DataFrame(itens), df_base, dicionario_pecas
+    except Exception as e:
+        print(f"Erro crítico no processamento do XML: {e}")
+        return pd.DataFrame(), df_base, dicionario_pecas
 
 # =========================
 # LER PLANILHA DE CUSTOS E APLICAR RATEIO
