@@ -1,0 +1,9 @@
+__pycache__/
+entrada_di/
+logs/
+modelo_adempiere/
+saida_conferencia/
+saida_xml/
+templates/
+app.py
+DESPESAS_DI.gsheet
