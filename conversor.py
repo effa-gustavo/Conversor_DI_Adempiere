@@ -1,19 +1,23 @@
 from pathlib import Path
 from datetime import datetime
-
 import pandas as pd
 from lxml import etree
 
-
 # =========================
-# PASTAS DO PROJETO
+# CONFIGURAÇÃO DE CAMINHOS (PORTÁTIL)
 # =========================
-BASE_DIR = Path(r"G:\.shortcut-targets-by-id\1z4x6Z5EnsuAb7ytlNwYUUU9Ae9c9f0va\Conversor_DI_Adempiere")
-PASTA_ENTRADA = BASE_DIR / "entrada_di"
-PASTA_LOGS = BASE_DIR / "logs"
-PASTA_CONFERENCIA = BASE_DIR / "saida_conferencia"
-PASTA_SAIDA_XML = BASE_DIR / "saida_xml"
+BASE_DIR = Path(__file__).parent
 ARQUIVO_CUSTOS = BASE_DIR / "custos_di.xlsx"
+
+# Substituímos as pastas fixas por funções que não dependem do sistema de arquivos
+# ou simplesmente comentamos as que não são usadas no fluxo web.
+def gerar_log_web(nome_di, df_itens, custos):
+    # Log simplificado apenas para o console do Streamlit
+    print(f"Log gerado para DI {nome_di}")
+
+def salvar_base_pecas(caminho, df):
+    # Garante que salva no caminho correto
+    df.to_excel(caminho, index=False)
 
 # =========================
 # FUNÇÕES BÁSICAS
