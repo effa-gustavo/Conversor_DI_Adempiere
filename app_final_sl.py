@@ -40,32 +40,39 @@ with st.form("form_conversao"):
 
 if submit:
     if xml_file is not None:
-        # Monta o dicionário com os valores do formulário
-        # Nota: O nome das chaves deve bater com o que o seu 'aplicar_rateio' espera
-        custos_usuario = {
-            "armazenagem": armazem,
-            "honorarios_despachante": despachante,
-            "liberacao_bl": 0, # Se não tiver no form, coloque 0
-            "afrmm": 0,
-            "frete_nacional": 0,
-            "taxa_siscomex": taxa_siscomex,
-            "processo": num_bl
-        }
-        
-        # Chama a função adaptada
+        # ... (seu código que chama o conversor.processar_di_via_web permanece igual)
+        custos_usuario = { ... }
         df_final = conversor.processar_di_via_web(xml_file, custos_usuario)
         
         st.success("Conversão concluída!")
         
-        # Converte o df_final para Excel na memória para o botão de download
-        from io import BytesIO
-        buffer = BytesIO()
-        df_final.to_excel(buffer, index=False)
+        # --- AQUI ESTÁ A MUDANÇA ---
+        # 1. Gerar o XML em memória (não salvar no disco)
+        # Vamos usar a função que você já tem, mas garantindo que ela retorne o XML
         
+        # Dica: No seu conversor.py, certifique-se de que a função 
+        # gera_xml_adempiere_teste retorne o objeto XML ou o texto dele.
+        
+        # Se você quiser simplificar agora, podemos gerar o download do XML:
+        # Como o seu conversor.py salva no disco, você pode ler esse arquivo gerado:
+        
+        caminho_xml_gerado = conversor.PASTA_SAIDA_XML / f"{xml_file.name.replace('.xml', '')}_adempiere_teste.xml"
+        
+        if caminho_xml_gerado.exists():
+            with open(caminho_xml_gerado, "rb") as f:
+                xml_data = f.read()
+            
+            st.download_button(
+                label="📥 Baixar XML para Adempiere",
+                data=xml_data,
+                file_name=f"{xml_file.name.replace('.xml', '')}_ADMPIERE.xml",
+                mime="application/xml"
+            )
+        
+        # Opcional: Manter o download da conferência
         st.download_button(
-            label="Baixar Planilha de Conferência",
-            data=buffer.getvalue(),
-            file_name="conferencia_rateio.xlsx"
+            label="📊 Baixar Planilha de Conferência",
+            data=df_final.to_csv(index=False).encode('utf-8'),
+            file_name="conferencia.csv",
+            mime="text/csv"
         )
-    else:
-        st.error("Por favor, faça o upload do XML.")
