@@ -215,7 +215,7 @@ def aplicar_rateio(df_itens, custos):
 # GERAR LOG E PLANILHA DE CONFERÊNCIA
 # =========================
 def gerar_log(nome_arquivo, df_itens, custos):
-    PASTA_LOGS.mkdir(exist_ok=True)
+
     numero_di = df_itens["numero_di"].iloc[0]
     caminho_log = PASTA_LOGS / f"{nome_arquivo}_rateio_log.txt"
 
@@ -236,7 +236,6 @@ def gerar_log(nome_arquivo, df_itens, custos):
     caminho_log.write_text("\n".join(linhas), encoding="utf-8")
 
 def gerar_planilha_conferencia(nome_arquivo, df_itens):
-    PASTA_CONFERENCIA.mkdir(exist_ok=True)
     caminho_excel = PASTA_CONFERENCIA / f"{nome_arquivo}_conferencia_rateio.xlsx"
     df_itens.to_excel(caminho_excel, index=False)
 
@@ -244,6 +243,9 @@ def gerar_planilha_conferencia(nome_arquivo, df_itens):
 # GERAR XML TESTE ADEMPIERE
 # =========================
 def gerar_xml_adempiere_teste(nome_arquivo, df_itens, custos):
+
+    custos = dict(custos) if isinstance(custos, dict) else {}
+
     numero_di = str(df_itens["numero_di"].iloc[0])
     processo = str(custos.get("processo", ""))
 
@@ -489,8 +491,14 @@ def processar_di_via_web(uploaded_file, dados_formulario):
     # A função ler_di aceita um 'caminho_xml', mas o lxml consegue ler se passarmos o arquivo aberto
     df_itens, df_base, dicionario_pecas = ler_di(uploaded_file, df_base, dicionario_pecas)
     
+    if df_itens.empty:
+        return pd.DataFrame()
+    
+    custos = dict(dados_formulario) if isinstance(dados_formulario, dict) else {}
+
     # 3. Aplica os custos (dados_formulario é o dicionário que você montará no app_final_sl)
     df_itens = aplicar_rateio(df_itens, dados_formulario)
+    return df_itens
     
     # 4. Atualiza a base de peças no Excel
     salvar_base_pecas(ARQUIVO_CUSTOS, df_base)

@@ -41,9 +41,13 @@ with st.form("form_conversao"):
 if submit:
     if xml_file is not None:
         # ... (seu código que chama o conversor.processar_di_via_web permanece igual)
-        custos_usuario = { ... }
+        custos_usuario = {
+            "armazenagem": float(armazem) if armazem else 0.0,
+            "honorarios_despachante": float(despachante) if despachante else 0.0,
+            "taxa_siscomex": float(taxa_siscomex) if taxa_siscomex else 0.0,
+            "processo": num_bl if num_bl else "SEM_PROCESSO"
+        }
         df_final = conversor.processar_di_via_web(xml_file, custos_usuario)
-        
         st.success("Conversão concluída!")
         
         # Chama a função e recebe o conteúdo (bytes)
