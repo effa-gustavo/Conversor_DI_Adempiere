@@ -46,28 +46,17 @@ if submit:
         
         st.success("Conversão concluída!")
         
-        # --- AQUI ESTÁ A MUDANÇA ---
-        # 1. Gerar o XML em memória (não salvar no disco)
-        # Vamos usar a função que você já tem, mas garantindo que ela retorne o XML
+        # Chama a função e recebe o conteúdo (bytes)
+        conteudo_xml = conversor.gerar_xml_adempiere_teste(xml_file.name, df_final, custos_usuario)
         
-        # Dica: No seu conversor.py, certifique-se de que a função 
-        # gera_xml_adempiere_teste retorne o objeto XML ou o texto dele.
+        # Botão de Download para o XML
+        st.download_button(
+            label="📥 Baixar XML para Adempiere",
+            data=conteudo_xml,
+            file_name=f"{xml_file.name.replace('.xml', '')}_ADMPIERE.xml",
+            mime="application/xml"
+        )
         
-        # Se você quiser simplificar agora, podemos gerar o download do XML:
-        # Como o seu conversor.py salva no disco, você pode ler esse arquivo gerado:
-        
-        caminho_xml_gerado = conversor.PASTA_SAIDA_XML / f"{xml_file.name.replace('.xml', '')}_adempiere_teste.xml"
-        
-        if caminho_xml_gerado.exists():
-            with open(caminho_xml_gerado, "rb") as f:
-                xml_data = f.read()
-            
-            st.download_button(
-                label="📥 Baixar XML para Adempiere",
-                data=xml_data,
-                file_name=f"{xml_file.name.replace('.xml', '')}_ADMPIERE.xml",
-                mime="application/xml"
-            )
         
         # Opcional: Manter o download da conferência
         st.download_button(
