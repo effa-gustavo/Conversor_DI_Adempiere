@@ -244,7 +244,6 @@ def gerar_planilha_conferencia(nome_arquivo, df_itens):
 # GERAR XML TESTE ADEMPIERE
 # =========================
 def gerar_xml_adempiere_teste(nome_arquivo, df_itens, custos):
-    PASTA_SAIDA_XML.mkdir(exist_ok=True)
     numero_di = str(df_itens["numero_di"].iloc[0])
     processo = str(custos.get("processo", ""))
 
@@ -440,16 +439,13 @@ def gerar_xml_adempiere_teste(nome_arquivo, df_itens, custos):
         f"XML teste gerado via Python. DI {numero_di}. Processo {processo}."
     )
 
-    caminho_xml = PASTA_SAIDA_XML / f"{nome_arquivo}_adempiere_teste.xml"
-
-    tree = etree.ElementTree(nfeProc)
-    tree.write(
-        str(caminho_xml),
-        pretty_print=True,
-        xml_declaration=True,
+    xml_bytes = etree.tostring(
+        nfeProc, 
+        pretty_print=True, 
+        xml_declaration=True, 
         encoding="utf-8"
     )
-    print(f"XML Adempiere teste gerado: {caminho_xml}")
+    return xml_bytes
 
 # =========================
 # PROCESSAR ARQUIVOS
