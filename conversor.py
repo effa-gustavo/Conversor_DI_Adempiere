@@ -329,11 +329,14 @@ def gerar_xml_adempiere_teste(nome_arquivo, df_itens, custos):
 
         codigo_produto = str(linha.get("codigo_produto", f"{linha['adicao']}-{linha['item_sequencia']}"))
         etree.SubElement(prod, "cProd").text = codigo_produto
+        etree.SubElement(prod, "M_Product_ID").text = "100000018"
         etree.SubElement(prod, "cEAN").text = "SEM GTIN"
         etree.SubElement(prod, "xProd").text = str(linha["descricao"])[:120]
         etree.SubElement(prod, "NCM").text = str(linha["ncm"])
         etree.SubElement(prod, "CFOP").text = "3101"
+        etree.SubElement(prod, "LBR_CFOP_ID").text = "3.101"
         etree.SubElement(prod, "uCom").text = str(linha["unidade"]).strip() or "UN"
+        etree.SubElement(prod, "C_UOM_ID").text = "UN"
         etree.SubElement(prod, "qCom").text = f"{float(linha['quantidade']):.4f}"
         
         quantidade = float(linha["quantidade"])
@@ -387,7 +390,7 @@ def gerar_xml_adempiere_teste(nome_arquivo, df_itens, custos):
         IPI = etree.SubElement(imposto, "IPI")
         etree.SubElement(IPI, "cEnq").text = "999"
         IPINT = etree.SubElement(IPI, "IPINT")
-        etree.SubElement(IPINT, "CST").text = "03"
+        etree.SubElement(IPINT, "CST").text = "05"
 
         PIS = etree.SubElement(imposto, "PIS")
         PISAliq = etree.SubElement(PIS, "PISAliq") 
