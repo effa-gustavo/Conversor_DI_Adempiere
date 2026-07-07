@@ -332,7 +332,7 @@ def gerar_xml_adempiere_teste(nome_arquivo, df_itens, custos):
         etree.SubElement(prod, "cEAN").text = "SEM GTIN"
         etree.SubElement(prod, "xProd").text = str(linha["descricao"])[:120]
         etree.SubElement(prod, "NCM").text = str(linha["ncm"])
-        etree.SubElement(prod, "CFOP").text = "3.101"
+        etree.SubElement(prod, "CFOP").text = "3101"
         etree.SubElement(prod, "uCom").text = str(linha["unidade"]).strip() or "UN"
         etree.SubElement(prod, "qCom").text = f"{float(linha['quantidade']):.4f}"
         
