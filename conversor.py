@@ -321,6 +321,8 @@ def gerar_xml_adempiere_teste(nome_arquivo, df_itens, custos):
         det = etree.SubElement(infNFe, "det", nItem=str(index + 1))
         prod = etree.SubElement(det, "prod")
 
+        etree.SubElement(prod, "M_Product_ID").text = "100000018"
+
         valor_produto = round(float(linha["cif"]), 2)
         custo_total = round(float(linha["custo_total_estimado"]), 2)
 
@@ -329,7 +331,6 @@ def gerar_xml_adempiere_teste(nome_arquivo, df_itens, custos):
 
         codigo_produto = str(linha.get("codigo_produto", f"{linha['adicao']}-{linha['item_sequencia']}"))
         etree.SubElement(prod, "cProd").text = codigo_produto
-        etree.SubElement(prod, "M_Product_ID").text = "100000018"
         etree.SubElement(prod, "cEAN").text = "SEM GTIN"
         etree.SubElement(prod, "xProd").text = str(linha["descricao"])[:120]
         etree.SubElement(prod, "NCM").text = str(linha["ncm"])
