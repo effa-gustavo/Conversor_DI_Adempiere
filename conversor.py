@@ -329,8 +329,8 @@ def gerar_xml_adempiere_teste(nome_arquivo, df_itens, custos):
 
         codigo_produto = str(linha.get("codigo_produto", f"{linha['adicao']}-{linha['item_sequencia']}"))
         etree.SubElement(prod, "cProd").text = codigo_produto
-        etree.SubElement(prod, "cEAN").text = "SEM GTIN"
         etree.SubElement(prod, "M_Product_ID").text = "100000018"
+        etree.SubElement(prod, "cEAN").text = "SEM GTIN"
         etree.SubElement(prod, "xProd").text = str(linha["descricao"])[:120]
         etree.SubElement(prod, "NCM").text = str(linha["ncm"])
         etree.SubElement(prod, "CFOP").text = "3101"
