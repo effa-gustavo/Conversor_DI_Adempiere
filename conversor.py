@@ -321,8 +321,6 @@ def gerar_xml_adempiere_teste(nome_arquivo, df_itens, custos):
         det = etree.SubElement(infNFe, "det", nItem=str(index + 1))
         prod = etree.SubElement(det, "prod")
 
-        etree.SubElement(prod, "M_Product_ID").text = "4021955"
-
         valor_produto = round(float(linha["cif"]), 2)
         custo_total = round(float(linha["custo_total_estimado"]), 2)
 
