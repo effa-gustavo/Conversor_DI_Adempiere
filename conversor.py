@@ -180,13 +180,12 @@ def aplicar_rateio(df_itens, custos):
 
     for despesa in despesas_por_peso:
         if despesa == "frete_internacional":
-            # O frete internacional continua vindo do XML por adição, mas se quiser que venha do form, pode ajustar.
             valor_total = df_itens["frete_internacional"].sum()
         else:
             # PEGA EXATAMENTE O QUE VEIO DO FORMULÁRIO WEB. Se não tiver nada, força 0.0 de forma limpa!
             valor_input = custos.get(despesa, 0.0)
             try:
-                valor_total = float(valor_input) if valor_input !== "" and valor_input is not None else 0.0
+                valor_total = float(valor_input) if valor_input != "" and valor_input is not None else 0.0
             except (ValueError, TypeError):
                 valor_total = 0.0
             
