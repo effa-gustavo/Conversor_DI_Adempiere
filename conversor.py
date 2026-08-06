@@ -161,7 +161,6 @@ def ler_custos(numero_di):
     return linha.iloc[0].to_dict()
 
 def aplicar_rateio(df_itens, custos):
-    # Garante que 'custos' é um dicionário seguro
     if not isinstance(custos, dict):
         try:
             custos = dict(custos)
@@ -172,40 +171,40 @@ def aplicar_rateio(df_itens, custos):
     if peso_total <= 0:
         raise Exception("Peso total do XML está zerado.")
 
-    # Lista de despesas que controlamos
+    # Removemos o frete_internacional da conta de despesas extras, 
+    # pois ele JÁ ESTÁ EMBUTIDO no valor CIF da mercadoria!
     despesas_por_peso = [
         "armazenagem", "honorarios_despachante", "liberacao_bl",
-        "afrmm", "frete_internacional", "frete_nacional", "taxa_siscomex"
+        "afrmm", "frete_nacional", "taxa_siscomex"
     ]
 
     for despesa in despesas_por_peso:
-        if despesa == "frete_internacional":
-            valor_total = df_itens["frete_internacional"].sum()
-        else:
-            # PEGA EXATAMENTE O QUE VEIO DO FORMULÁRIO WEB. Se não tiver nada, força 0.0 de forma limpa!
-            valor_input = custos.get(despesa, 0.0)
-            try:
-                valor_total = float(valor_input) if valor_input != "" and valor_input is not None else 0.0
-            except (ValueError, TypeError):
-                valor_total = 0.0
+        valor_input = custos.get(despesa, 0.0)
+        try:
+            valor_total = float(valor_input) if valor_input != "" and valor_input is not None else 0.0
+        except (ValueError, TypeError):
+            valor_total = 0.0
             
-        # Aplica o rateio proporcional pelo peso apenas se houver valor maior que zero
+        # Rateia apenas as despesas reais pagas por fora (como Armazém, Siscomex, etc.)
         if peso_total > 0 and valor_total > 0:
             df_itens[f"{despesa}_rateado"] = (df_itens["peso"] / peso_total * valor_total)
         else:
             df_itens[f"{despesa}_rateado"] = 0.0
 
-    # Soma todas as despesas rateadas extras para compor o custo extra do item
+    # Força o frete internacional rateado como 0.0 para não duplicar o CIF
+    df_itens["frete_internacional_rateado"] = 0.0
+
+    # Soma apenas os custos extras reais (ex: taxa siscomex que você digitou)
     df_itens["custo_extra_rateado"] = (
         df_itens.get("armazenagem_rateado", 0.0)
         + df_itens.get("honorarios_despachante_rateado", 0.0)
         + df_itens.get("liberacao_bl_rateado", 0.0)
         + df_itens.get("afrmm_rateado", 0.0)
         + df_itens.get("frete_nacional_rateado", 0.0)
-        + df_itens.get("frete_internacional_rateado", 0.0)
         + df_itens.get("taxa_siscomex_rateado", 0.0)
     )
 
+    # Custo total do item = CIF (que já tem mercadoria + frete internacional) + impostos + despesas extras reais
     df_itens["custo_total_estimado"] = (
         df_itens["cif"]
         + df_itens.get("ii", 0.0)
