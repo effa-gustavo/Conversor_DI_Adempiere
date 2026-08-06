@@ -491,8 +491,6 @@ def processar_di_via_web(uploaded_file, dados_formulario):
     # 1. Carrega base de peças (isso pode ficar igual)
     df_base, dicionario_pecas = carregar_base_pecas(ARQUIVO_CUSTOS)
     
-    # 2. Processa o XML (Agora passamos o objeto 'uploaded_file' direto para o ler_di)
-    # A função ler_di aceita um 'caminho_xml', mas o lxml consegue ler se passarmos o arquivo aberto
     df_itens, df_base, dicionario_pecas = ler_di(uploaded_file, df_base, dicionario_pecas)
     
     if df_itens.empty:
@@ -502,7 +500,6 @@ def processar_di_via_web(uploaded_file, dados_formulario):
 
     # 3. Aplica os custos (dados_formulario é o dicionário que você montará no app_final_sl)
     df_itens = aplicar_rateio(df_itens, dados_formulario)
-    return df_itens
     
     # 4. Atualiza a base de peças no Excel
     salvar_base_pecas(ARQUIVO_CUSTOS, df_base)
