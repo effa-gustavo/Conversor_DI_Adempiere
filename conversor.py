@@ -161,11 +161,8 @@ def ler_custos(numero_di):
     return linha.iloc[0].to_dict()
 
 def aplicar_rateio(df_itens, custos):
-
-    if ler_custos is None:
-        custos = {}
-    elif not isinstance(custos, dict):
-        # Se for qualquer outra coisa (tipo uma Serie ou objeto Streamlit), converte para dict
+    # Garante que 'custos' é um dicionário seguro
+    if not isinstance(custos, dict):
         try:
             custos = dict(custos)
         except:
@@ -175,7 +172,7 @@ def aplicar_rateio(df_itens, custos):
     if peso_total <= 0:
         raise Exception("Peso total do XML está zerado.")
 
-    # Adicionamos "taxa_siscomex" na lista para ser lida da planilha e rateada pelo peso
+    # Lista de despesas que controlamos
     despesas_por_peso = [
         "armazenagem", "honorarios_despachante", "liberacao_bl",
         "afrmm", "frete_internacional", "frete_nacional", "taxa_siscomex"
@@ -183,30 +180,39 @@ def aplicar_rateio(df_itens, custos):
 
     for despesa in despesas_por_peso:
         if despesa == "frete_internacional":
+            # O frete internacional continua vindo do XML por adição, mas se quiser que venha do form, pode ajustar.
             valor_total = df_itens["frete_internacional"].sum()
         else:
-            # Busca o valor da despesa na planilha Excel
-            valor_total = float(custos.get(despesa, 0) or 0)
+            # PEGA EXATAMENTE O QUE VEIO DO FORMULÁRIO WEB. Se não tiver nada, força 0.0 de forma limpa!
+            valor_input = custos.get(despesa, 0.0)
+            try:
+                valor_total = float(valor_input) if valor_input !== "" and valor_input is not None else 0.0
+            except (ValueError, TypeError):
+                valor_total = 0.0
             
-        df_itens[f"{despesa}_rateado"] = (df_itens["peso"] / peso_total * valor_total)
+        # Aplica o rateio proporcional pelo peso apenas se houver valor maior que zero
+        if peso_total > 0 and valor_total > 0:
+            df_itens[f"{despesa}_rateado"] = (df_itens["peso"] / peso_total * valor_total)
+        else:
+            df_itens[f"{despesa}_rateado"] = 0.0
 
-    # Agora a Taxa Siscomex rateada entra corretamente na composição das despesas extras
+    # Soma todas as despesas rateadas extras para compor o custo extra do item
     df_itens["custo_extra_rateado"] = (
-        df_itens["armazenagem_rateado"]
-        + df_itens["honorarios_despachante_rateado"]
-        + df_itens["liberacao_bl_rateado"]
-        + df_itens["afrmm_rateado"]
-        + df_itens["frete_nacional_rateado"]
-        + df_itens["frete_internacional_rateado"]
-        + df_itens["taxa_siscomex_rateado"] # Alterado para puxar a versão rateada
+        df_itens.get("armazenagem_rateado", 0.0)
+        + df_itens.get("honorarios_despachante_rateado", 0.0)
+        + df_itens.get("liberacao_bl_rateado", 0.0)
+        + df_itens.get("afrmm_rateado", 0.0)
+        + df_itens.get("frete_nacional_rateado", 0.0)
+        + df_itens.get("frete_internacional_rateado", 0.0)
+        + df_itens.get("taxa_siscomex_rateado", 0.0)
     )
 
     df_itens["custo_total_estimado"] = (
         df_itens["cif"]
-        + df_itens["ii"]
-        + df_itens["ipi"]
-        + df_itens["pis"]
-        + df_itens["cofins"]
+        + df_itens.get("ii", 0.0)
+        + df_itens.get("ipi", 0.0)
+        + df_itens.get("pis", 0.0)
+        + df_itens.get("cofins", 0.0)
         + df_itens["custo_extra_rateado"]
     )
     return df_itens
