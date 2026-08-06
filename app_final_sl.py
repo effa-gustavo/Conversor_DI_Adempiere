@@ -40,7 +40,7 @@ with st.form("form_conversao"):
 
 if submit:
     if xml_file is not None:
-        # ... (seu código que chama o conversor.processar_di_via_web permanece igual)
+        # 1. Empacota os custos preenchidos no formulário
         custos_usuario = {
             "armazenagem": armazem if armazem else 0.0,
             "honorarios_despachante": despachante if despachante else 0.0,
@@ -49,24 +49,32 @@ if submit:
             "seguro": seguro if seguro else 0.0,
             "processo": num_bl if num_bl else "SEM_PROCESSO"
         }
-        st.success("Conversão concluída!")
         
-        # Chama a função e recebe o conteúdo (bytes)
-        conteudo_xml = conversor.gerar_xml_adempiere_teste(xml_file.name, df_final, custos_usuario)
+        # 2. Processa o XML e aplica o rateio limpo (criando o DataFrame 'df_itens')
+        df_itens = conversor.processar_di_via_web(xml_file, custos_usuario)
         
-        # Botão de Download para o XML
-        st.download_button(
-            label="📥 Baixar XML para Adempiere",
-            data=conteudo_xml,
-            file_name=f"{xml_file.name.replace('.xml', '')}_ADMPIERE.xml",
-            mime="application/xml"
-        )
-        
-        
-        # Opcional: Manter o download da conferência
-        st.download_button(
-            label="📊 Baixar Planilha de Conferência",
-            data=df_final.to_csv(index=False).encode('utf-8'),
-            file_name="conferencia.csv",
-            mime="text/csv"
-        )
+        if not df_itens.empty:
+            st.success("Conversão concluída com sucesso!")
+            
+            # 3. Gera o XML usando o DataFrame processado corretamente
+            conteudo_xml = conversor.gerar_xml_adempiere_teste(xml_file.name, df_itens, custos_usuario)
+            
+            # Botão de Download para o XML do Adempiere
+            st.download_button(
+                label="📥 Baixar XML para Adempiere",
+                data=conteudo_xml,
+                file_name=f"{xml_file.name.replace('.xml', '')}_ADMPIERE.xml",
+                mime="application/xml"
+            )
+            
+            # Botão de Download da Planilha de Conferência
+            st.download_button(
+                label="📊 Baixar Planilha de Conferência",
+                data=df_itens.to_csv(index=False).encode('utf-8'),
+                file_name="conferencia.csv",
+                mime="text/csv"
+            )
+        else:
+            st.error("Erro: Nenhum item foi encontrado ou processado no XML da DI.")
+    else:
+        st.warning("Por favor, faça o upload de um arquivo XML antes de continuar.")
