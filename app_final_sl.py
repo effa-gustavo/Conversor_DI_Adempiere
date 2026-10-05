@@ -18,6 +18,14 @@ st.title("Conversor DI/NF-e - EFFA MOTORS")
 with st.form("form_conversao"):
     xml_file = st.file_uploader("Upload do Arquivo (.xml) (DI):", type="xml")
     
+    col_cfop1, col_cfop2 = st.columns(1)
+    # Seleção do CFOP desejado
+    cfop_selecionado = st.selectbox(
+        "Selecione o CFOP:",
+        options=["3.101 - Insumos", "3.551 - Ativo"],
+        index=0
+    )
+    
     col1, col2 = st.columns(2)
     with col1:
         num_di = st.text_input("Número da DI:", placeholder="Ex: 26/0000000-0")
@@ -40,14 +48,18 @@ with st.form("form_conversao"):
 
 if submit:
     if xml_file is not None:
-        # 1. Empacota os custos preenchidos no formulário
+        # Extrai apenas o código numérico do CFOP selecionado ("3.551" -> "3551" ou "3.101" -> "3101")
+        cfop_codigo = "3551" if "3.551" in cfop_selecionado else "3101"
+
+        # 1. Empacota os custos preenchidos no formulário incluindo o CFOP
         custos_usuario = {
             "armazenagem": armazem if armazem else 0.0,
             "honorarios_despachante": despachante if despachante else 0.0,
             "taxa_siscomex": taxa_siscomex if taxa_siscomex else 0.0,
             "frete_nacional": frete if frete else 0.0,
             "seguro": seguro if seguro else 0.0,
-            "processo": num_bl if num_bl else "SEM_PROCESSO"
+            "processo": num_bl if num_bl else "SEM_PROCESSO",
+            "cfop": cfop_codigo
         }
         
         # 2. Processa o XML e aplica o rateio limpo (criando o DataFrame 'df_itens')

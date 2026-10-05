@@ -318,8 +318,11 @@ def gerar_xml_adempiere_teste(nome_arquivo, df_itens, custos):
     etree.SubElement(enderDest, "xPais").text = "CHINA"
     etree.SubElement(dest, "indIEDest").text = "9"
 
+    
     total_produtos = 0
     total_nf = 0
+
+    cfop_informado = custos.get("cfop", "3101")
 
     for index, linha in df_itens.iterrows():
         det = etree.SubElement(infNFe, "det", nItem=str(index + 1))
@@ -336,7 +339,7 @@ def gerar_xml_adempiere_teste(nome_arquivo, df_itens, custos):
         etree.SubElement(prod, "cEAN").text = "SEM GTIN"
         etree.SubElement(prod, "xProd").text = str(linha["descricao"])[:120]
         etree.SubElement(prod, "NCM").text = str(linha["ncm"])
-        etree.SubElement(prod, "CFOP").text = "3101"
+        etree.SubElement(prod, "CFOP").text = cfop_informado
         etree.SubElement(prod, "uCom").text = str(linha["unidade"]).strip() or "UN"
         etree.SubElement(prod, "qCom").text = f"{float(linha['quantidade']):.4f}"
         
