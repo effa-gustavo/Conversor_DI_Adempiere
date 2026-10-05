@@ -18,8 +18,7 @@ st.title("Conversor DI/NF-e - EFFA MOTORS")
 with st.form("form_conversao"):
     xml_file = st.file_uploader("Upload do Arquivo (.xml) (DI):", type="xml")
     
-    col_cfop1, col_cfop2 = st.columns(1)
-    # Seleção do CFOP desejado
+    # Seleção do CFOP desejado (exibido corretamente agora)
     cfop_selecionado = st.selectbox(
         "Selecione o CFOP:",
         options=["3.101 - Insumos", "3.551 - Ativo"],
